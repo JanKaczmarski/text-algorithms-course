@@ -2,7 +2,7 @@ import os
 
 from lab_1.analyze_text_file import analyze_text_file
 
-TEST_FILE_PATH = os.path.join("test_file.md")
+TEST_FILE_PATH = "tests/test_file.md"
 
 
 class TestAnalyzeTextFile:

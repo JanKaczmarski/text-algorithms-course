@@ -227,28 +227,66 @@ def simplify(regex):
 
 
 def build_dfa(regex: RegEx, alphabet: set[str]) -> Optional[DFA]:
-    # TODO: Implement the Brzozowski algorithm to convert regex to DFA
-    # Steps:
-    # 1. Start with the initial regex as the start state
-    # 2. For each state and each symbol in the alphabet:
-    #    - Compute the derivative of the state's regex with respect to the symbol
-    #    - Simplify the resulting regex
-    #    - Add a transition from the current state to a state representing this new regex
-    # 3. States are accepting if their regex is nullable
-    # 4. Continue until no new states are discovered
-
     # Initialize data structures
-    states = set()  # Set of state names (q0, q1, etc.)
-    state_to_regex = {}  # Maps state names to their regex
-    accept_states = set()  # Set of accepting state names
-    transitions = {}  # Maps (state, symbol) pairs to next state
-    regex_to_state = {}  # Maps string representations of regex to state names
+    states = set()
+    state_to_regex = {}
+    accept_states = set()
+    transitions = {}
+    regex_to_state = {}
 
     # Initialize state counter for generating unique state names
     state_counter = 0
 
-    # YOUR CODE HERE
+    def get_state_name(regex):
+        """Generate or retrieve a unique state name for a given regex."""
+        nonlocal state_counter
+        simplified_regex = simplify(regex)
+        regex_str = str(simplified_regex)
+        if regex_str not in regex_to_state:
+            state_name = f"q{state_counter}"
+            state_counter += 1
+            regex_to_state[regex_str] = state_name
+            state_to_regex[state_name] = simplified_regex
+            states.add(state_name)
+            if simplified_regex.nullable():
+                accept_states.add(state_name)
+        return regex_to_state[regex_str]
+
+    # Start with the initial regex as the start state
+    start_state = get_state_name(regex)
+
+    # Use a queue to explore states and discover transitions
+    queue = deque([start_state])
+
+    while queue:
+        current_state = queue.popleft()
+        current_regex = state_to_regex[current_state]
+
+        for symbol in alphabet:
+            # Compute the derivative of the current regex with respect to the symbol
+            derivative_regex = current_regex.derivative(symbol)
+
+            # Get the state name for the derivative regex
+            next_state = get_state_name(derivative_regex)
+
+            # Add a transition from the current state to the next state
+            transitions[(current_state, symbol)] = next_state
+
+            # If the next state is newly discovered, add it to the queue
+            if next_state not in state_to_regex:
+                queue.append(next_state)
 
     # Return the constructed DFA
-    # You should return DFA(states, alphabet, transitions, start_state, accept_states)
-    return None
+    return DFA(states, alphabet, transitions, start_state, accept_states)
+
+
+# Example Usage
+# Define a regular expression, e.g., (a|b)*
+regex = Concatenation(Symbol("a"), KleeneStar(Concatenation(Symbol("b"), Symbol("a"))))
+alphabet = {"a", "b"}
+
+# Build the DFA
+dfa = build_dfa(regex, alphabet)
+
+# Print the DFA details
+print(dfa)

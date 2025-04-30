@@ -13,8 +13,12 @@ def compute_bad_character_table(pattern: str) -> dict:
     # This table maps each character to its rightmost occurrence in the pattern
     # For characters not in the pattern, they should not be in the dictionary
     # Remember that this is used to determine how far to shift when a mismatch occurs
+    res = {}
+    for i in range(len(pattern) - 1, -1, -1):
+        if pattern[i] not in res:
+            res[pattern[i]] = i
 
-    return {}
+    return res
 
 
 def compute_good_suffix_table(pattern: str) -> list[int]:
@@ -28,13 +32,25 @@ def compute_good_suffix_table(pattern: str) -> list[int]:
         A list where shift[i] stores the shift required when a mismatch
         happens at position i of the pattern
     """
-    # TODO: Implement the good suffix heuristic for Boyer-Moore algorithm
-    # This is a more complex rule that handles:
-    # 1. When we have seen a suffix before elsewhere in the pattern
-    # 2. When only a prefix of the suffix matches a prefix of the pattern
-    # Hint: This involves two-phase preprocessing of the pattern
+    m = len(pattern)
+    shift = [0] * (m + 1)
 
-    return [0] * (len(pattern) + 1)
+    def find_shift(s, i):
+        suffix = s[i + 1 :]
+        for k in range(i, -1, -1):
+            if s[k : k + len(suffix)] == suffix:
+                return i - k + 1
+        for k in range(1, len(suffix)):
+            if suffix[-k:] == s[:k]:
+                return len(suffix) - k
+        return len(s)
+
+    for i in range(m):
+        shift[i] = find_shift(pattern, i)
+
+    shift[m] = 1
+
+    return shift
 
 
 def boyer_moore_pattern_match(text: str, pattern: str) -> list[int]:
@@ -54,4 +70,28 @@ def boyer_moore_pattern_match(text: str, pattern: str) -> list[int]:
     # 3. When a mismatch occurs, use the maximum shift from both tables
     # 4. Return all positions where the pattern is found in the text
 
-    return []
+    if not pattern:
+        return list(range(len(text) + 1))
+
+    m = len(pattern)
+    n = len(text)
+    matches = []
+
+    bad_char_table = compute_bad_character_table(pattern)
+    good_suffix_table = compute_good_suffix_table(pattern)
+
+    i = 0
+    while i <= n - m:
+        j = m - 1
+        while j >= 0 and pattern[j] == text[i + j]:
+            j -= 1
+
+        if j < 0:
+            matches.append(i)
+            i += good_suffix_table[m]
+        else:
+            bad_char_shift = j - bad_char_table.get(text[i + j], -1)
+
+            i += max(bad_char_shift, good_suffix_table[j])
+
+    return matches
