@@ -9,7 +9,7 @@ def set_nth_bit(n: int) -> int:
         Maska bitowa z n-tym bitem ustawionym na 1
     """
     # TODO: Zaimplementuj ustawianie n-tego bitu
-    pass
+    return 1 << n
 
 
 def nth_bit(m: int, n: int) -> int:
@@ -24,7 +24,7 @@ def nth_bit(m: int, n: int) -> int:
         Wartość n-tego bitu (0 lub 1)
     """
     # TODO: Zaimplementuj odczytywanie n-tego bitu
-    pass
+    return (m >> n) & 1
 
 
 def make_mask(pattern: str) -> list:
@@ -40,7 +40,12 @@ def make_mask(pattern: str) -> list:
     # TODO: Zaimplementuj tworzenie tablicy masek dla algorytmu Shift-Or
     # TODO: Utwórz tablicę z maskami dla wszystkich znaków ASCII
     # TODO: Dla każdego znaku w pattern, ustaw odpowiednie bity w maskach
-    pass
+    m = [0xFF] * 256
+
+    for j, c in enumerate(pattern):
+        m[ord(c)] &= ~set_nth_bit(j)
+
+    return m
 
 
 def shift_or(text: str, pattern: str) -> list[int]:
@@ -60,4 +65,16 @@ def shift_or(text: str, pattern: str) -> list[int]:
     # TODO: Zainicjalizuj stan początkowy
     # TODO: Zaimplementuj główną logikę algorytmu
     # TODO: Wykryj i zapisz pozycje dopasowań
-    return []
+    if len(pattern) == 0 or len(pattern) > len(text):
+        return []
+    m = make_mask(pattern)
+    s = ~0
+    output = []
+
+    for i, c in enumerate(text):
+        s = (s << 1) | m[ord(c)]
+
+        if nth_bit(s, len(pattern) - 1) == 0:
+            output.append(i - len(pattern) + 1)
+
+    return output
